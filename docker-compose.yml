@@ -50,13 +50,3 @@ services:
       ELASTICSEARCH_URL: http://elasticsearch:9200
     links:
       - elasticsearch
-  curator:
-    image: curator:latest
-    links:
-      - elasticsearch
-    environment:
-      CURATOR_CONFIG_FILE: /.curator/curator.yml
-      CURATOR_ACTION_FILE: /.curator/action.yml
-    volumes:
-      - ./curator/curator.yml:/.curator/curator.yml
-      - ./curator/action.yml:/.curator/action.yml
