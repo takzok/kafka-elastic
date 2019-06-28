@@ -1,0 +1,62 @@
+version: '2'
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - 2181:2181
+    volumes:
+      - ./volume/zookeeper/:/var/run/docker.sock
+  kafka:
+    build: .
+    links:
+      - zookeeper
+    ports:
+      - 9092:9092
+      - 8778:8778
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: OUTSIDE://:9092,INSIDE://:9192
+      KAFKA_ADVERTISED_LISTENERS: OUTSIDE://127.0.0.1:9092,INSIDE://kafka:9192
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: OUTSIDE:PLAINTEXT,INSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_OPTS: -javaagent:/usr/app/jolokia-jvm.jar=port=8778,host=0.0.0.0
+    volumes:
+      - ./volume/kafka/:/var/run/docker.sock
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat:7.1.1
+    volumes:
+      - ./metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
+    links:
+      - elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.1.1
+    ports:
+      - 9200:9200
+      - 9300:9300
+    volumes:
+      - ./esdata01/:/usr/share/elasticsearch/data
+      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    links:
+      - kafka
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.1.1
+    ports:
+      - 5601:5601
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    links:
+      - elasticsearch
+  curator:
+    image: curator:latest
+    links:
+      - elasticsearch
+    environment:
+      CURATOR_CONFIG_FILE: /.curator/curator.yml
+      CURATOR_ACTION_FILE: /.curator/action.yml
+    volumes:
+      - ./curator/curator.yml:/.curator/curator.yml
+      - ./curator/action.yml:/.curator/action.yml

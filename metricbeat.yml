@@ -1,0 +1,67 @@
+metricbeat.modules:
+- module: jolokia
+  metricsets: ["jmx"]
+  period: 10s
+  hosts: ["kafka:8778"]
+  namespace: "kafka-metrics"
+  # path: "/jolokia/?ignoreErrors=true&canonicalNaming=false"
+  # username: "user"
+  # password: "secret"
+  jmx.mappings:
+    - mbean: 'kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec,topic=*'
+      attributes:
+        - attr: Count
+          field: BytesInPersec.count
+    #- mbean: 'java.lang:type=Memory'
+    #  attributes:
+    #    - attr: HeapMemoryUsage
+    #      field: memory.heap_usage
+    #    - attr: NonHeapMemoryUsage
+    #      field: memory.non_heap_usage
+    # GC Metrics - this depends on what is available on your JVM
+    #- mbean: 'java.lang:type=GarbageCollector,name=ConcurrentMarkSweep'
+    #  attributes:
+    #    - attr: CollectionTime
+    #      field: gc.cms_collection_time
+    #    - attr: CollectionCount
+    #      field: gc.cms_collection_count
+  jmx.application:
+  jmx.instance:
+
+- module: kafka
+  metricsets: ["consumergroup", "partition"]
+  period: 10s
+  hosts: ["kafka:9092"]
+  enabled: true
+
+  #client_id: metricbeat
+  #retries: 3
+  #backoff: 250ms
+
+  # List of Topics to query metadata for. If empty, all topics will be queried.
+  #topics: []
+
+  # Optional SSL. By default is off.
+  # List of root certificates for HTTPS server verifications
+  #ssl.certificate_authorities: ["/etc/pki/root/ca.pem"]
+
+  # Certificate for SSL client authentication
+  #ssl.certificate: "/etc/pki/client/cert.pem"
+
+  # Client Certificate Key
+  #ssl.key: "/etc/pki/client/cert.key"
+
+  # SASL authentication
+  #username: ""
+  #password: ""
+  #
+output:
+  elasticsearch:
+    hosts: ["elasticsearch:9200"]
+    ilm.enabled: true
+    ilm.rollover_alias: "metricbeat"
+    ilm.pattern: "{now/d}-000001" 
+
+setup:
+  kibana:
+    hosts: ["kibana:5601"]
