@@ -21,7 +21,7 @@ This docker-compose contains following containers.
 
 `docker-compose up`
 
-## Access to prometheus and grafana
+## Access to kibana
 
 - kibana
 
